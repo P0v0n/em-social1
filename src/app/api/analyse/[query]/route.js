@@ -95,18 +95,43 @@ export async function POST(_req, { params }) {
 
     console.log(`[ANALYSE API] Found ${docs.length} documents for ${keyword}`);
 
-    // Local sentiment per post
-    const texts = docs.map(d => (d.text || '').toString().slice(0, 5000));
+    // Focus analytics on comments if present; otherwise include all
+    const commentDocs = docs.filter(d => typeof d.postId === 'string' && (d.postId.startsWith('comment-') || d.postId.startsWith('reply-')));
+    const sourceDocs = commentDocs.length > 0 ? commentDocs : docs;
+
+    // Local sentiment per text
+    const texts = sourceDocs.map(d => (d.text || '').toString().slice(0, 5000));
+    const created = sourceDocs.map(d => d.createdAt ? new Date(d.createdAt) : null);
     const senti = await analyseSentiments(texts);
     const counts = { positive: 0, neutral: 0, negative: 0 };
     const samples = { en: [], hi: [], mr: [] };
+    const trendMap = new Map(); // date -> {pos,neu,neg,total}
+    const wordLengths = [];
+
     senti.forEach((s, i) => {
-      counts[s.sentiment] = (counts[s.sentiment] || 0) + 1;
-      // sample collection by naive lang guess
+      const sentiment = s.sentiment;
+      counts[sentiment] = (counts[sentiment] || 0) + 1;
+
       const t = texts[i] || '';
-      const lang = /[\u0900-\u097F]/.test(t) ? 'hi' : /[\u0900-\u097F]/.test(t) ? 'mr' : 'en';
-      if (samples[lang].length < 15) samples[lang].push({ text: t.slice(0, 240).replace(/\s+/g, ' ').trim(), sentiment: s.sentiment, confidence: Number(s.confidence?.toFixed?.(3) || s.confidence || 0) });
+      const tokensCount = (t.match(/\S+/g) || []).length;
+      wordLengths.push(tokensCount);
+      const isDevanagari = /[\u0900-\u097F]/.test(t);
+      const lang = isDevanagari ? 'hi' : 'en';
+      if (samples[lang].length < 50) {
+        samples[lang].push({ text: t.slice(0, 240).replace(/\s+/g, ' ').trim(), sentiment, confidence: Number(s.confidence?.toFixed?.(3) || s.confidence || 0) });
+      }
+
+      const dt = created[i];
+      if (dt && !isNaN(dt)) {
+        const day = dt.toISOString().slice(0,10);
+        const bucket = trendMap.get(day) || { date: day, positive: 0, neutral: 0, negative: 0, total: 0 };
+        bucket[sentiment] += 1;
+        bucket.total += 1;
+        trendMap.set(day, bucket);
+      }
     });
+
+    const trend = Array.from(trendMap.values()).sort((a,b)=> a.date.localeCompare(b.date));
 
     // Keyword frequency (simple token counts)
     const freq = {};
@@ -115,6 +140,11 @@ export async function POST(_req, { params }) {
       for (const tok of tokens) freq[tok] = (freq[tok] || 0) + 1;
     }
     const topFreq = Object.fromEntries(Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0, 100));
+
+    // Word count stats
+    const wcAvg = wordLengths.length ? (wordLengths.reduce((a,b)=>a+b,0) / wordLengths.length) : 0;
+    const wcMax = wordLengths.length ? Math.max(...wordLengths) : 0;
+    const wcMin = wordLengths.length ? Math.min(...wordLengths) : 0;
 
     const prompt = `
 You are a multilingual social media analyst. Analyze the following posts about "${keyword}". The text may include English (en), Hindi (hi), and Marathi (mr). Detect the language per post and perform sentiment analysis accordingly.
@@ -234,14 +264,14 @@ ${docs.map(d => JSON.stringify(d)).join('\n')}
           highlights: [],
           recommendations: [],
         },
-        trend: [],
+        trend,
         languages: {
           en: { distribution: counts, confidenceAvg: 0, topKeywords: [], themes: [], samplePosts: samples.en },
           hi: { distribution: counts, confidenceAvg: 0, topKeywords: [], themes: [], samplePosts: samples.hi },
           mr: { distribution: counts, confidenceAvg: 0, topKeywords: [], themes: [], samplePosts: samples.mr },
         },
         topEngagers: [],
-        wordCountStats: { avg: 0, max: 0, min: 0 },
+        wordCountStats: { avg: wcAvg, max: wcMax, min: wcMin },
         keywordFrequency: topFreq,
       };
     }
