@@ -136,15 +136,15 @@ export default function KeywordsPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-screen bg-gray-950">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+      <div className="bg-gray-900 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-white">
               Real Time Keywords Configuration
             </h1>
           </div>
@@ -152,7 +152,7 @@ export default function KeywordsPage() {
             <select
               value={selectedBrand}
               onChange={(e) => setSelectedBrand(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="px-4 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white"
             >
               <option value="Twinkle Khanna">Twinkle Khanna</option>
               <option value="Vantara">Vantara</option>
@@ -166,9 +166,9 @@ export default function KeywordsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6">
+      <div className="bg-gray-900 border-b border-gray-700 px-6">
         <div className="flex gap-6">
-          <button className="py-3 px-1 text-sm font-medium border-b-2 border-blue-600 text-blue-600">
+          <button className="py-3 px-1 text-sm font-medium border-b-2 border-blue-600 text-blue-400">
             Real Time Keywords Configuration
           </button>
           <button className="py-3 px-1 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
@@ -182,7 +182,7 @@ export default function KeywordsPage() {
         
         {/* Keyword Search Section */}
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">🔍 Search Keywords</h2>
+          <h2 className="text-xl font-bold text-white mb-4">🔍 Search Keywords</h2>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Platform Selection & Search Input */}
@@ -236,7 +236,7 @@ export default function KeywordsPage() {
                       placeholder="#example"
                       value={hashtag}
                       onChange={(e) => setHashtag(e.target.value)}
-                      className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+                      className="bg-gray-800 border-gray-600"
                     />
                   </div>
                   <Button
@@ -262,13 +262,13 @@ export default function KeywordsPage() {
                       <div
                         key={idx}
                         onClick={() => router.push(`/collection/${name}`)}
-                        className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-blue-600 hover:border-blue-400 hover:text-white transition text-gray-900 dark:text-white"
+                        className="px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 cursor-pointer hover:bg-blue-600 hover:border-blue-400 hover:text-white transition text-white"
                       >
                         #{name}
                       </div>
                     ))
                   ) : (
-                    <p className="text-gray-500 dark:text-gray-400">No recent searches yet</p>
+                    <p className="text-gray-400">No recent searches yet</p>
                   )}
                 </div>
               </CardContent>
@@ -277,75 +277,50 @@ export default function KeywordsPage() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-gray-300 dark:border-gray-700 my-8"></div>
+        <div className="border-t border-gray-700 my-8"></div>
 
         {/* Keywords Configuration Section */}
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">⚙️ Keyword Configuration</h2>
-          
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search by Group Name, Keyword"
-                  className="pl-10 w-96"
-                />
-              </div>
-              <Button variant="outline" size="icon">
-                <Search className="w-5 h-5" />
-              </Button>
-              <Button variant="outline" size="icon">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-                </svg>
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Active Keywords / Total Keywords :
-              </span>
-              <span className="font-semibold text-gray-900 dark:text-white">4 / 4</span>
-            </div>
-          </div>
+          <h2 className="text-xl font-bold text-white mb-4">⚙️ Keyword Configuration</h2>
+
+          {/* removed search bar per request */}
 
           {/* Keywords Table */}
           <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <thead className="bg-gray-800 border-b border-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Keywords Group Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Keywords/Keywords Query
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Channels
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Created On
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-gray-900 divide-y divide-gray-700">
                 {mockKeywords.map((keyword) => (
-                  <tr key={keyword.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <tr key={keyword.id} className="hover:bg-gray-800">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="text-sm font-medium text-white">
                         {keyword.groupName}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-white">
+                      <div className="text-sm text-white">
                         {keyword.query}
                       </div>
                     </td>
@@ -392,12 +367,12 @@ export default function KeywordsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
+                      <div className="text-sm text-white">
                         {keyword.createdOn}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-900/20 text-yellow-400">
                         {keyword.status}
                       </span>
                     </td>
