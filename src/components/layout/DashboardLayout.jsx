@@ -13,15 +13,12 @@ import {
   X,
   ChevronDown,
   LogOut,
-  Moon,
-  Sun,
   FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -58,13 +55,8 @@ export default function DashboardLayout({ children }) {
     }
   ];
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
-  };
-
   return (
-    <div className={`flex h-screen ${darkMode ? 'dark' : ''}`}>
+    <div className={`flex h-screen dark`}>
       {/* Sidebar */}
       <aside
         className={`fixed lg:relative inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out ${
@@ -178,14 +170,7 @@ export default function DashboardLayout({ children }) {
             </div>
 
             <div className="flex items-center gap-4">
-              {/* Dark Mode Toggle */}
-              <button
-                onClick={toggleDarkMode}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
-
+              
               {/* Notifications */}
               <button className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                 <Bell className="w-5 h-5" />
