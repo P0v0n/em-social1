@@ -108,6 +108,7 @@ Return ONLY valid minified JSON matching this schema exactly:
     "highlights": Array<string>,
     "recommendations": Array<string>
   },
+  "trend": Array<{"date": string, "positive": number, "neutral": number, "negative": number, "total": number}>,
   "languages": {
     "en": {
       "distribution": {"positive": number, "neutral": number, "negative": number},
@@ -139,6 +140,7 @@ Return ONLY valid minified JSON matching this schema exactly:
 Guidance:
 Perform language detection using cues in text; map to keys: en, hi, mr.
 Classify sentiment as positive, neutral, or negative. Provide a confidence 0..1.
+For "trend", aggregate posts per calendar day (UTC) using the post's createdAt field; include counts per sentiment and total; only include days present in the data; sort ascending; prefer last 90 days if many.
 For topKeywords, lemmatize/stem and aggregate within each language; include Devanagari tokens for hi/mr.
 themes should be concise labels with 1-2 short example posts each (in original language).
 Keep arrays short (<=10 items). Numbers must be numbers. Strings must not contain newlines.

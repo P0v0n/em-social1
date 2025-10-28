@@ -49,8 +49,8 @@ export default function AnalyseButton({ collectionName }) {
         console.log('Analysis result:', data);
       }
       
-      // Navigate to reports page
-      router.push(`/collection/${collectionName}/reports`);
+      // Navigate to analytics page focusing this collection
+      router.push(`/analytics?collection=${encodeURIComponent(collectionName)}`);
     } catch (err) {
       console.error('Error in analyseCollection:', err);
       setError(err.message);

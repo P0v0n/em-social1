@@ -1,3 +1,6 @@
+- Feature: Analyse button now routes to `/analytics?collection=<name>` after success.
+- Feature: Analytics page reads query param `collection` and auto-selects it; falls back to first available collection.
+- Fix: Analytics now supports both new (`summary.overallDistribution`) and legacy (`sentimentDistribution`) schemas for accurate counts and charts.
 ## 2025-09-22
 
 ## 2025-09-23
@@ -139,4 +142,10 @@ Impact: Users can now visualize keyword frequency data through an interactive wo
 
 Impact: Codebase is version-controlled. To push to GitHub, run:
 `git remote add origin <your_repo_url>` then `git push -u origin main`.
+
+## 2025-10-28 (Revert)
+
+- Reverted today's frontend/backend split and interactive chart changes.
+- Removed temporary `frontend/` and `backend/` folders and root monorepo files.
+- Restored project to original `emsocial/`-only structure.
 
