@@ -163,19 +163,47 @@ ${docs.map(d => JSON.stringify(d)).join('\n')}
       { headers: { 'Content-Type': 'application/json' } }
     );
 
-    const content = geminiRes.data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const content = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    let analysis;
-    try {
-      const cleaned = content
-        .replace(/^```json\s*/i, '')
-        .replace(/```$/, '')
-        .trim();
+    // Robust JSON extraction from potential fenced code blocks or commentary
+    function tryParse(jsonText) {
+      if (!jsonText) return null;
+      try {
+        return JSON.parse(jsonText);
+      } catch (_) {
+        return null;
+      }
+    }
 
-      analysis = JSON.parse(cleaned);
-    } catch (e) {
-      console.error('[ANALYSE API] Failed to parse Gemini response:', e);
-      return Response.json({ error: 'Failed to parse Gemini response', raw: content }, { status: 500 });
+    let body = String(content);
+    // Prefer fenced block if present
+    const fenced = body.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenced && fenced[1]) body = fenced[1];
+    body = body.trim();
+
+    let analysis = tryParse(body);
+    if (!analysis) {
+      // Strip any stray backticks or language hints
+      let stripped = body.replace(/```[a-z]*\s*/gi, '').replace(/```/g, '').trim();
+      analysis = tryParse(stripped);
+    }
+    if (!analysis) {
+      // Remove trailing commas before closing braces/brackets
+      const withoutTrailingCommas = body.replace(/,(\s*[}\]])/g, '$1');
+      analysis = tryParse(withoutTrailingCommas);
+    }
+    if (!analysis) {
+      // Fallback: extract first {...} block
+      const start = body.indexOf('{');
+      const end = body.lastIndexOf('}');
+      if (start !== -1 && end !== -1 && end > start) {
+        const candidate = body.slice(start, end + 1);
+        analysis = tryParse(candidate);
+      }
+    }
+    if (!analysis) {
+      console.error('[ANALYSE API] Failed to parse Gemini response. Raw content preview:', (content || '').slice(0, 500));
+      return Response.json({ error: 'Failed to parse Gemini response', raw: (content || '').slice(0, 1000) }, { status: 500 });
     }
 
     await Promise.all(
