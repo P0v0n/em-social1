@@ -71,6 +71,7 @@
 import axios from 'axios';
 import { connectToDB } from '@/app/lib/mongodb';
 import { getModelForKeyword } from '@/app/models/socialSchema';
+import { analyseSentiments } from '@/app/lib/localSentiment';
 
 export async function POST(_req, { params }) {
   try {
@@ -93,6 +94,27 @@ export async function POST(_req, { params }) {
     }
 
     console.log(`[ANALYSE API] Found ${docs.length} documents for ${keyword}`);
+
+    // Local sentiment per post
+    const texts = docs.map(d => (d.text || '').toString().slice(0, 5000));
+    const senti = await analyseSentiments(texts);
+    const counts = { positive: 0, neutral: 0, negative: 0 };
+    const samples = { en: [], hi: [], mr: [] };
+    senti.forEach((s, i) => {
+      counts[s.sentiment] = (counts[s.sentiment] || 0) + 1;
+      // sample collection by naive lang guess
+      const t = texts[i] || '';
+      const lang = /[\u0900-\u097F]/.test(t) ? 'hi' : /[\u0900-\u097F]/.test(t) ? 'mr' : 'en';
+      if (samples[lang].length < 15) samples[lang].push({ text: t.slice(0, 240).replace(/\s+/g, ' ').trim(), sentiment: s.sentiment, confidence: Number(s.confidence?.toFixed?.(3) || s.confidence || 0) });
+    });
+
+    // Keyword frequency (simple token counts)
+    const freq = {};
+    for (const t of texts) {
+      const tokens = (t.toLowerCase().match(/[a-z\u0900-\u097F]+/g) || []).slice(0, 200);
+      for (const tok of tokens) freq[tok] = (freq[tok] || 0) + 1;
+    }
+    const topFreq = Object.fromEntries(Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0, 100));
 
     const prompt = `
 You are a multilingual social media analyst. Analyze the following posts about "${keyword}". The text may include English (en), Hindi (hi), and Marathi (mr). Detect the language per post and perform sentiment analysis accordingly.
@@ -149,21 +171,22 @@ Data to analyze (newline-separated JSON objects):\n\n
 ${docs.map(d => JSON.stringify(d)).join('\n')}
     `;
 
-    if (!process.env.GEMINI_API_KEY) {
-      console.error('[ANALYSE API] Missing GEMINI_API_KEY');
-      return Response.json({ error: 'Server not configured: GEMINI_API_KEY missing' }, { status: 500 });
+    let narrative = '';
+    try {
+      if (!process.env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY missing');
+      console.log('[ANALYSE API] Calling Gemini for narrative...');
+      const geminiRes = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          contents: [{ parts: [{ text: prompt }] }],
+        },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      const content = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      narrative = String(content).slice(0, 2000);
+    } catch (e) {
+      console.warn('[ANALYSE API] Narrative generation skipped:', e?.message || e);
     }
-
-    console.log('[ANALYSE API] Calling Gemini API...');
-    const geminiRes = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: [{ parts: [{ text: prompt }] }],
-      },
-      { headers: { 'Content-Type': 'application/json' } }
-    );
-
-    const content = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     // Robust JSON extraction from potential fenced code blocks or commentary
     function tryParse(jsonText) {
@@ -201,9 +224,26 @@ ${docs.map(d => JSON.stringify(d)).join('\n')}
         analysis = tryParse(candidate);
       }
     }
+    // Build fallback analysis when narrative not parsed
     if (!analysis) {
-      console.error('[ANALYSE API] Failed to parse Gemini response. Raw content preview:', (content || '').slice(0, 500));
-      return Response.json({ error: 'Failed to parse Gemini response', raw: (content || '').slice(0, 1000) }, { status: 500 });
+      analysis = {
+        summary: {
+          overallDistribution: counts,
+          overallConfidenceAvg: 0,
+          narrative: narrative || 'Narrative unavailable.',
+          highlights: [],
+          recommendations: [],
+        },
+        trend: [],
+        languages: {
+          en: { distribution: counts, confidenceAvg: 0, topKeywords: [], themes: [], samplePosts: samples.en },
+          hi: { distribution: counts, confidenceAvg: 0, topKeywords: [], themes: [], samplePosts: samples.hi },
+          mr: { distribution: counts, confidenceAvg: 0, topKeywords: [], themes: [], samplePosts: samples.mr },
+        },
+        topEngagers: [],
+        wordCountStats: { avg: 0, max: 0, min: 0 },
+        keywordFrequency: topFreq,
+      };
     }
 
     await Promise.all(
