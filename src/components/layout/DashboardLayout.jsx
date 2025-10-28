@@ -67,7 +67,7 @@ export default function DashboardLayout({ children }) {
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              <img src="/logo.gif" alt="EM-Social" className="w-8 h-8 rounded-full" />
+              <img src="/logo.gif" alt="EM-Social" className="w-28 h-16 rounded-full object-cover" />
               <span className="font-bold text-lg">EM-Social</span>
             </div>
           )}
