@@ -67,8 +67,8 @@ export default function DashboardLayout({ children }) {
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              <img src="/logo.gif" alt="EM-Social" className="w-28 h-16 rounded-full object-cover" />
-              <span className="font-bold text-lg">EM-Social</span>
+              <img src="/logo.gif" alt="EM-Social" className="w-36 h-9 rounded-full object-cover" />
+           
             </div>
           )}
           <button
@@ -139,7 +139,7 @@ export default function DashboardLayout({ children }) {
                 <span className="text-white font-semibold">U</span>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-white truncate">User</div>
+                <div className="text-sm font-medium text-white truncate">Account</div>
                 <div className="text-xs text-gray-400 truncate">Admin</div>
               </div>
             </div>
