@@ -4,7 +4,7 @@ import { getModelForKeyword } from '@/app/models/socialSchema'; // new schema
 
 export async function POST(req) {
   try {
-    const { query, maxResults = 200, commentsPerVideo = 50 } = await req.json();
+    const { query, maxResults = 200, includeComments = true } = await req.json();
 
     if (!query) {
       return Response.json({ error: 'Missing query' }, { status: 400 });
@@ -86,40 +86,84 @@ export async function POST(req) {
     analysis: {},
   }));
 
-  // Fetch top-level comments for each video (up to commentsPerVideo, max 100)
-  const maxComments = Math.min(Number(commentsPerVideo) || 0, 100);
+  // Fetch ALL comments (top-level + replies) for each video, paginated
   const commentDocs = [];
-  if (maxComments > 0) {
+  if (includeComments) {
     for (const vid of videos) {
-      const cRes = await axios.get('https://www.googleapis.com/youtube/v3/commentThreads', {
-        params: {
-          key: process.env.YOUTUBE_API_KEY,
-          part: 'snippet',
-          videoId: vid.id,
-          maxResults: Math.min(maxComments, 100),
-          order: 'relevance',
-          textFormat: 'plainText',
-        },
-      });
-      for (const item of (cRes.data.items || [])) {
-        const top = item.snippet?.topLevelComment?.snippet;
-        const cid = item.snippet?.topLevelComment?.id || item.id;
-        if (!top || !cid) continue;
-        commentDocs.push({
-          keyword: query,
-          postId: `comment-${cid}`,
-          text: top.textDisplay || top.textOriginal || '',
-          authorName: top.authorDisplayName || '',
-          createdAt: new Date(top.publishedAt || Date.now()),
-          likeCount: parseInt(top.likeCount || 0),
-          commentCount: null,
-          shareCount: null,
-          viewCount: null,
-          mediaUrl: '',
-          postUrl: `https://www.youtube.com/watch?v=${vid.id}&lc=${cid}`,
-          analysis: {},
+      let ctPageToken = undefined;
+      do {
+        const ctRes = await axios.get('https://www.googleapis.com/youtube/v3/commentThreads', {
+          params: {
+            key: process.env.YOUTUBE_API_KEY,
+            part: 'snippet',
+            videoId: vid.id,
+            maxResults: 100,
+            order: 'time',
+            textFormat: 'plainText',
+            pageToken: ctPageToken,
+          },
         });
-      }
+        const threads = ctRes.data.items || [];
+        for (const item of threads) {
+          const top = item.snippet?.topLevelComment?.snippet;
+          const topId = item.snippet?.topLevelComment?.id || item.id;
+          if (top && topId) {
+            commentDocs.push({
+              keyword: query,
+              postId: `comment-${topId}`,
+              text: top.textDisplay || top.textOriginal || '',
+              authorName: top.authorDisplayName || '',
+              createdAt: new Date(top.publishedAt || Date.now()),
+              likeCount: parseInt(top.likeCount || 0),
+              commentCount: null,
+              shareCount: null,
+              viewCount: null,
+              mediaUrl: '',
+              postUrl: `https://www.youtube.com/watch?v=${vid.id}&lc=${topId}`,
+              analysis: {},
+            });
+          }
+
+          const replyCount = item.snippet?.totalReplyCount || 0;
+          if (topId && replyCount > 0) {
+            // Paginate all replies for this top-level comment
+            let rPageToken = undefined;
+            do {
+              const rRes = await axios.get('https://www.googleapis.com/youtube/v3/comments', {
+                params: {
+                  key: process.env.YOUTUBE_API_KEY,
+                  part: 'snippet',
+                  parentId: topId,
+                  maxResults: 100,
+                  textFormat: 'plainText',
+                  pageToken: rPageToken,
+                },
+              });
+              const replies = rRes.data.items || [];
+              for (const r of replies) {
+                const rs = r.snippet;
+                if (!rs || !r.id) continue;
+                commentDocs.push({
+                  keyword: query,
+                  postId: `reply-${r.id}`,
+                  text: rs.textDisplay || rs.textOriginal || '',
+                  authorName: rs.authorDisplayName || '',
+                  createdAt: new Date(rs.publishedAt || Date.now()),
+                  likeCount: parseInt(rs.likeCount || 0),
+                  commentCount: null,
+                  shareCount: null,
+                  viewCount: null,
+                  mediaUrl: '',
+                  postUrl: `https://www.youtube.com/watch?v=${vid.id}&lc=${topId}`,
+                  analysis: {},
+                });
+              }
+              rPageToken = rRes.data.nextPageToken;
+            } while (rPageToken);
+          }
+        }
+        ctPageToken = ctRes.data.nextPageToken;
+      } while (ctPageToken);
     }
   }
 
