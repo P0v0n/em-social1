@@ -72,11 +72,9 @@ import axios from 'axios';
 import { connectToDB } from '@/app/lib/mongodb';
 import { getModelForKeyword } from '@/app/models/socialSchema';
 
-export async function POST(req, context) {
+export async function POST(_req, { params }) {
   try {
-    const { params } = context;
-    const { query } = await params;
-    const keyword = query; // dynamic path param, e.g., /analyse/ipl
+    const keyword = params?.query; // dynamic path param, e.g., /analyse/ipl
 
     if (!keyword) {
       return Response.json({ error: 'Missing keyword' }, { status: 400 });
@@ -150,6 +148,11 @@ IMPORTANT: Include keywordFrequency as an object with top keywords and their cou
 Data to analyze (newline-separated JSON objects):\n\n
 ${docs.map(d => JSON.stringify(d)).join('\n')}
     `;
+
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('[ANALYSE API] Missing GEMINI_API_KEY');
+      return Response.json({ error: 'Server not configured: GEMINI_API_KEY missing' }, { status: 500 });
+    }
 
     console.log('[ANALYSE API] Calling Gemini API...');
     const geminiRes = await axios.post(
