@@ -93,7 +93,8 @@ export default function Report({ analysis, collectionName }) {
     ? Object.entries(computedDistribution).map(([name, value]) => ({ name, value }))
     : pieData;
 
-  const topComments = samplesWithOverrides.slice(0, 10);
+  // Show all comments (not just top 10)
+  const displayedComments = samplesWithOverrides;
 
   async function handleSaveOverrides() {
     if (!collectionName) {
@@ -367,17 +368,17 @@ export default function Report({ analysis, collectionName }) {
         </section>
       )}
 
-      {/* Top 10 Comments */}
+      {/* All Comments */}
       <section className="bg-gradient-to-br from-gray-900 to-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700/50">
         <h2 className="text-3xl font-bold bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent mb-6 flex items-center gap-3">
           <svg className="w-8 h-8 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
           </svg>
-          Top 10 Comments
+          All Comments
         </h2>
-        {topComments.length ? (
+        {displayedComments.length ? (
           <ul className="space-y-4">
-            {topComments.map((c, i) => {
+            {displayedComments.map((c, i) => {
               const sentimentColors = {
                 positive: {
                   bg: 'bg-green-600/90',
